@@ -1,101 +1,136 @@
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, FlatList } from 'react-native';
-import io from 'socket.io-client';
-import { Audio } from 'expo-av';
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  KeyboardAvoidingView,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert,
+  Platform,
+} from "react-native";
+import io from "socket.io-client";
+import { Audio } from "expo-av";
 
-const socket = io('http://localhost:5000');
+const socket = io("https://mag-8a5m.onrender.com");
 
 const Message = () => {
-  const [message, setMessage] = useState('');
-  const [receivedMessages, setReceivedMessages] = useState<{ user: string; message: string, Position : string }[]>([]);
   const { name } = useLocalSearchParams();
-  const notification = new Audio.Sound();
-  const newUser = new Audio.Sound();
-  const left = new Audio.Sound();
+  const [message, setMessage] = useState("");
+  const [receivedMessages, setReceivedMessages] = useState<
+    { user: string; message: string; position: "left" | "right" }[]
+  >([]);
 
-
-  useEffect(() => {
-    async function loadSound() {
-      await notification.loadAsync(require('../assets/notification.mp3'));
-      await newUser.loadAsync(require('../assets/new-user.wav'));
-      await left.loadAsync(require('../assets/left.wav'));
-    }
-    loadSound();
-  }, []);
+  const notificationSound = useRef(new Audio.Sound());
+  const newUserSound = useRef(new Audio.Sound());
+  const userLeftSound = useRef(new Audio.Sound());
 
   useEffect(() => {
-    if (name) {
-      socket.emit('join', name);
-    }
-
-    const handleReceive = (data : any) => {
-      console.log('Received:', data);
-      setReceivedMessages((prevMessages) => [...prevMessages, { user: data.user, message: data.message, Position: 'left' }]);
-      // Play notification sound
-      notification.playAsync().catch((error) => console.error('Error playing sound:', error));
-    };
-
-    const handleNewUser = (userName : any) => {
-      if (userName !== name) { // Prevent alert for the user who joined
-        alert(`${userName} has joined the chat!`);
-        newUser.playAsync().catch((error) =>
-          console.error("Error playing new user sound:", error)
-        );
+    const loadSounds = async () => {
+      try {
+        await notificationSound.current.loadAsync(require("../assets/notification.mp3"));
+        await newUserSound.current.loadAsync(require("../assets/new-user.wav"));
+        await userLeftSound.current.loadAsync(require("../assets/left.wav"));
+      } catch (error) {
+        console.error("Error loading sounds:", error);
       }
     };
 
-    const handleUserLeft = (userName : any) => {
-      alert(`${userName} has left the chat!`);
-      // Play notification sound
-      left.playAsync().catch((error) => console.error('Error playing sound:', error));
-    }
-  
-    socket.on('user-join', handleNewUser);
-    socket.on('reciver', handleReceive);
-    socket.on('left', handleUserLeft);
+    loadSounds();
 
     return () => {
-      socket.off('user-join', handleNewUser);
-      socket.off('reciver', handleReceive);
-      socket.off('left', handleUserLeft);
+      notificationSound.current.unloadAsync();
+      newUserSound.current.unloadAsync();
+      userLeftSound.current.unloadAsync();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (name) socket.emit("join", name);
+
+    const handleReceive = (data: { user: string; message: string }) => {
+      setReceivedMessages((prev) => [...prev, { ...data, position: "left" }]);
+      notificationSound.current.playAsync().catch(console.error);
+    };
+
+    const handleNewUser = (userName: string) => {
+      if (userName !== name) {
+        Alert.alert(`${userName} has joined the chat!`);
+        newUserSound.current.playAsync().catch(console.error);
+      }
+    };
+
+    const handleUserLeft = (userName: string) => {
+      Alert.alert(`${userName} has left the chat!`);
+      userLeftSound.current.playAsync().catch(console.error);
+    };
+
+    socket.on("user-join", handleNewUser);
+    socket.on("reciver", handleReceive);
+    socket.on("left", handleUserLeft);
+
+    return () => {
+      socket.off("user-join", handleNewUser);
+      socket.off("reciver", handleReceive);
+      socket.off("left", handleUserLeft);
     };
   }, [name]);
 
   const handleSend = () => {
-    if (message.trim() !== '') {
-      setReceivedMessages((prevMessages) => [...prevMessages, { user: name as string, message, Position: 'right' }]);
-      socket.emit('send', message);
-      setMessage('');
-    }
+    if (!message.trim()) return;
+
+    setReceivedMessages((prev) => [
+      ...prev,
+      { user: name as string, message, position: "right" },
+    ]);
+
+    socket.emit("send", message);
+    setMessage("");
   };
 
-  console.log('receivedMessages', receivedMessages);
-  
-
   return (
-    <View className="flex items-center justify-center h-screen w-screen bg-gray-100">
-      <Text className="text-5xl text-blue-500 p-4">Welcome: {name}</Text>
-      <View className="h-2/3 w-3/4 border-2 border-blue-500 p-2">
-        <FlatList
-          data={receivedMessages}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={[item.Position === 'right' ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]} className="p-3 m-2 min-w-[150px] max-w-xs  rounded-lg text-white shadow-md">
-              <Text className="text-blue-500">{item.user}</Text>
-              <Text>{item.message}</Text>
-            </View>
-          )}
-        />
-      </View>
-      <TextInput
-        className="border-2 border-blue-500 p-2 w-3/4"
-        value={message}
-        onChangeText={setMessage}
-        placeholder="Enter your message"
-        onSubmitEditing={handleSend}
-      />
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1 items-center justify-center bg-gray-100 p-4">
+          <Text className="text-2xl font-semibold text-blue-500 mb-4">Welcome: {name}</Text>
+
+          {/* Chat Box - Adjusts width based on screen size */}
+          <View className="w-full max-w-3xl flex-1 border-2 border-blue-500 p-3 rounded-lg bg-white ">
+            <FlatList
+              data={receivedMessages}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View
+                  className={`p-3 m-2 min-w-[150px] max-w-xs rounded-lg ${
+                    item.position === "right" ? "self-end bg-gray-100 " : "self-start bg-gray-300"
+                  }`}
+                >
+                  <Text className="font-bold text-blue-500">{item.user}</Text>
+                  <Text>{item.message}</Text>
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Input Section - Centered on all screen sizes */}
+          <View className="bottom-5 w-full max-w-3xl px-4">
+            <TextInput
+              className="border-2 border-blue-500 p-3 w-full text-lg rounded-lg bg-white shadow-md"
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Type your message..."
+              onSubmitEditing={handleSend}
+            />
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
