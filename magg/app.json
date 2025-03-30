@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "magg",
-    "slug": "magg",
+    "name": "mag",
+    "slug": "mag",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "",
-    "scheme": "magg",
+    "icon": "magg/app/assets/image/adaptive-icon.png",
+    "scheme": "mag",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,21 +13,22 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "magg/app/assets/image/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dk934.mag"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": ""
+      "favicon": "magg/app/assets/image/adaptive-icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "",
+          "image": "magg/app/assets/image/adaptive-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
