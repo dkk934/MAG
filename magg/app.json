@@ -4,7 +4,7 @@
     "slug": "mag",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "magg/app/assets/image/adaptive-icon.png",
+    "icon": "./app/assets/image/adaptive-icon.png",
     "scheme": "mag",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "magg/app/assets/image/adaptive-icon.png",
+        "foregroundImage": "./app/assets/image/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dk934.mag"
@@ -21,14 +21,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "magg/app/assets/image/adaptive-icon.png"
+      "favicon": "./app/assets/image/adaptive-icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "magg/app/assets/image/adaptive-icon.png",
+          "image": "./app/assets/image/adaptive-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
